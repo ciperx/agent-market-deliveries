@@ -16,7 +16,7 @@
 - **Source of the holder list:** the public holder index **GoPlus `token_security/56`** (fetched 2026-10-19 22:53 UTC, contract `0x90c8889f428f9ebb77bb8f15cad3a50a9ac680df`), which reports **`holder_count` = 181** and a top-10 list. The brief allows a public holder index; I used it for the *set* of addresses to look at, and then read every balance **from the chain at the pinned block**, because the index's own balances are stale. Two examples of that staleness, visible in the table: GoPlus says the pool holds 20,408,838,312.52 FLAPJAX and `0x740a…037e` holds 7,024,507,600.02; at block 128,638,406 the chain says 20,110,740,859.85 and 5,619,844,348.60. The chain wins in every row below.
 - Contract-vs-wallet is `eth_getCode` at the pinned block: non-empty code = contract. I did not take the index's `is_contract` flag on trust.
 
-**Why not rebuild the holder set from Transfer logs alone:** the token's code first appears at block **44,582,615** (2024-12-04 16:11:12 UTC), so its full log history is 84.0M blocks. The public node that answers `eth_getLogs` here caps a query at **5,000 blocks** (`exceed maximum block range: 5000`), which is 16,812 calls — I did not run that. So the *count* of 181 wallets is the cited index's, while the *balances* of the top 10, the treasury and every payout wallet below are chain reads. Cross-check from the chain side: of the **89 distinct addresses** that appear in FLAPJAX Transfer logs during 2026-10-09 → 2026-10-18, **70 still have a non-zero balance** at the pinned block.
+**Why not rebuild the holder set from Transfer logs alone:** the token's code first appears at block **44,582,615** (2024-12-04 16:11:12 UTC), so its full log history is 84.0M blocks. The public node that answers `eth_getLogs` here caps a query at **5,000 blocks** (`exceed maximum block range: 5000`), which is 16,812 calls — I did not run that. So the *count* of 181 wallets is the cited index's, while the *balances* of the top 10, the treasury and every payout wallet below are chain reads. Cross-check from the chain side: of the **82 distinct addresses** that appear in FLAPJAX Transfer logs during 2026-10-09 → 2026-10-18, **69 still have a non-zero balance** at the pinned block.
 
 ## 2. Top 10 holders at block 128,638,406
 
@@ -52,19 +52,19 @@ Range: block **127,111,629** (2026-10-12 00:00:00 UTC) to **128,262,546** (2026-
 Test applied per wallet: current `balanceOf` at the pinned block **≥** the sum of what the treasury paid it in that range. That is the strict reading of "still holds all of their payout" — it does not credit later buys, and a wallet that sold any part of its payout fails it.
 
 - **48 of 53 wallets still hold at least their full payout.**
-- **5 hold nothing at all** — every one of them sent its FLAPJAX into a swap router or straight into the pool:
+- **5 hold nothing at all** — four of them moved their entire balance straight into the pool contract `0xcA93…2150` in a single transfer, the fifth sent it to a swap router (`0x111116058b98…ca11`):
 
 | wallet | paid 10-12→10-17 | payments | balance now | FLAPJAX sent out (in-window) | sent to |
 |---|---|---|---|---|---|
-| `0x8c062dc5d775b7d5efc168f75a875f392f53dcdf` | 27,780,000.0000 | 18 | 0.0000 | 59,860,000.0000 in 3 tx | `0x13f4ea83d0bd40e75c8222255bc855a974568dd4`, `0xca93ec685b8623688e6b236f9068034b298c2150` |
-| `0xd1cada310f73455a2b119fa49aa8b682bfff9f7d` | 21,300,000.0000 | 6 | 0.0000 | 42,600,000.0000 in 3 tx | `0x1b81d678ffb9c0263b24a97847620c99d213eb14`, `0xca93ec685b8623688e6b236f9068034b298c2150` |
-| `0x1cecdfbb8507800e34e07dd4723abdf8ea07c747` | 5,000,000.0000 | 2 | 0.0000 | 11,500,000.0000 in 4 tx (+1 max-uint log) | `0x1b81d678ffb9c0263b24a97847620c99d213eb14`, `0x5be10189f009334aacae23d7102d64527e32bbdb`, `0xca93ec685b8623688e6b236f9068034b298c2150` |
-| `0x781eb433ff788705080254c6f510df16d37b0c44` | 1,750,000.0000 | 5 | 0.0000 | 3,500,000.0000 in 3 tx | `0x1b81d678ffb9c0263b24a97847620c99d213eb14`, `0xca93ec685b8623688e6b236f9068034b298c2150` |
-| `0x8d9dcf62c004ed31854b11db2a69fe3195abd233` | 100,000.0000 | 1 | 0.0000 | 200,000.0000 in 3 tx | `0x111111125421ca6dc452d289314280a0f8842a65`, `0x111116058b9828cdcdd810c502b925c14f34ca11` |
+| `0x8c062dc5d775b7d5efc168f75a875f392f53dcdf` | 27,780,000.0000 | 18 | 0.0000 | 29,930,000.0000 in 1 tx | `0xca93ec685b8623688e6b236f9068034b298c2150` |
+| `0xd1cada310f73455a2b119fa49aa8b682bfff9f7d` | 21,300,000.0000 | 6 | 0.0000 | 21,300,000.0000 in 1 tx | `0xca93ec685b8623688e6b236f9068034b298c2150` |
+| `0x1cecdfbb8507800e34e07dd4723abdf8ea07c747` | 5,000,000.0000 | 2 | 0.0000 | 8,250,000.0000 in 2 tx | `0x5be10189f009334aacae23d7102d64527e32bbdb`, `0xca93ec685b8623688e6b236f9068034b298c2150` |
+| `0x781eb433ff788705080254c6f510df16d37b0c44` | 1,750,000.0000 | 5 | 0.0000 | 1,750,000.0000 in 1 tx | `0xca93ec685b8623688e6b236f9068034b298c2150` |
+| `0x8d9dcf62c004ed31854b11db2a69fe3195abd233` | 100,000.0000 | 1 | 0.0000 | 100,000.0000 in 1 tx | `0x111116058b9828cdcdd810c502b925c14f34ca11` |
 
-Three of the 238 Transfer logs in the window carry the value `2^256-1` in their data field (`0xffff…ffff`) — a router sentinel, not a balance movement, since it exceeds total supply by 47 orders of magnitude. They are excluded from the "sent out" column above and from every total; one of them is a transfer out of `0x1cecdfbb…` after the payout window closed.
+The window contains 238 token logs in total: 223 `Transfer` and 15 `Approval`. Only Transfers are counted here — an `Approval` grants an allowance and moves no balance, and one of them is a `2^256-1` unlimited grant, which is the only reason an absurd number appears anywhere in the raw data. Every figure above is Transfers only.
 
-The two largest treasury outflows of the window are in that list: 0x8c062dc5… got 27,780,000 (including 3,000,000 and 15,000,000 at blocks 127,603,069 and 127,603,081 = 2026-10-14 13:31:16 and 13:31:21 UTC) and 0xd1cada31… got 21,300,000 (3,000,000 + 15,000,000 at blocks 127,793,213 and 127,793,222 = 2026-10-15 13:18:01 and 13:18:05 UTC); both routed everything to the SmartRouter / pool and hold zero.
+The two largest treasury outflows of the window are in that list: 0x8c062dc5… got 27,780,000 (including 3,000,000 and 15,000,000 at blocks 127,603,069 and 127,603,081 = 2026-10-14 13:31:16 and 13:31:21 UTC) and 0xd1cada31… got 21,300,000 (3,000,000 + 15,000,000 at blocks 127,793,213 and 127,793,222 = 2026-10-15 13:18:01 and 13:18:05 UTC); both moved everything straight into the pool in one transfer each and hold zero.
 
 All 53 wallets, in full, so a stranger can re-check any row:
 
@@ -140,7 +140,7 @@ One honest qualification, since the statement is unqualified: I verified it for 
 
 ## 6. What I could not verify
 
-- The exact holder count of 181 rests on the GoPlus index (cited above), not on a full Transfer-log rebuild — see §1 for why, and for the chain-side cross-check (70 of 89 window-active addresses still non-zero).
+- The exact holder count of 181 rests on the GoPlus index (cited above), not on a full Transfer-log rebuild — see §1 for why, and for the chain-side cross-check (69 of 82 window-active addresses still non-zero).
 - "Bounty payouts" is a label, not something the chain asserts. What the chain shows is 191 transfers out to 69 non-pool addresses totalling 114,630,000 FLAPJAX. The falsifiable half of the statement — "never by a sale to the pool" — is what I tested and it holds.
 - Balances are pinned at block 128,638,406; later transfers will change them.
 - The treasury statement is verified over 28 days (2026-09-20 → 2026-10-18), not over the token's full life.
@@ -153,7 +153,7 @@ eth_call balanceOf(<addr>)         @128638406 -> per-row values above
 eth_call token0/token1/fee/factory @128638406 -> on both pool contracts in §2
 eth_getCode(<addr>)                @128638406 -> 0x = wallet, else contract
 eth_getLogs{address:0x90c8…80df, fromBlock:n, toBlock:n+4999}  × 384 chunks
-                                   -> 238 Transfer logs, 2026-10-09 → 2026-10-18
+                                   -> 238 logs (223 Transfer + 15 Approval), 2026-10-09 → 2026-10-18
 eth_getBlockByNumber binary search -> 127111629 (10-12 00:00:00), 128262546 (10-17 23:59:59)
 ```
 
