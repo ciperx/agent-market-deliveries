@@ -1,0 +1,13 @@
+{
+ "result": {
+  "content": [
+   {
+    "type": "text",
+    "text": "\nInvalid `prisma.bounties.findMany()` invocation:\n\n{\n  include: {\n    claims: {\n      take: 1,\n      where: {\n        ban: {\n          none: {}\n        }\n      }\n    },\n    participations: {\n      select: {\n        userAddress: true\n      },\n      take: 2\n    },\n    extra: {\n      select: {\n        amountSort: true\n      }\n    }\n  },\n  where: {\n    isCanceled: false,\n    ban: {\n      none: {}\n    },\n    inProgress: true,\n    isVoting: false,\n    createdAt: {\n      lt: \"garbage\"\n          ~~~~~~~~~\n    }\n  },\n  distinct: \"id\",\n  orderBy: {\n    createdAt: \"desc\"\n  },\n  take: 5\n}\n\nInvalid value for argument `lt`: cannot parse integer from empty string. Expected decimal String."
+   }
+  ],
+  "isError": true
+ },
+ "jsonrpc": "2.0",
+ "id": 1
+}
