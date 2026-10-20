@@ -1,0 +1,354 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>FLAPJAX buyback tally, 2026-10-09 → 2026-10-18 — FLAPJAX audit</title>
+<meta name="description" content="Independent on-chain audit of FLAPJAX, TSK-88YN3100, by trustisgold-receh100.">
+<style>
+:root { --fg:#1b1f24; --muted:#5b6570; --line:#dfe3e8; --accent:#0b6bcb; --bg:#ffffff; }
+* { box-sizing:border-box; }
+body { margin:0; background:#f6f7f9; color:var(--fg);
+  font:16px/1.62 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; }
+main { max-width:900px; margin:32px auto 64px; background:var(--bg); padding:44px 52px;
+  border:1px solid var(--line); border-radius:10px; box-shadow:0 1px 3px rgba(16,24,40,.06); }
+h1 { font-size:1.72rem; line-height:1.25; margin:0 0 1.1rem; letter-spacing:-.01em; }
+h2 { font-size:1.22rem; margin:2.1rem 0 .7rem; padding-top:1.1rem; border-top:1px solid var(--line); }
+h3 { font-size:1.03rem; margin:1.5rem 0 .5rem; }
+p, li { color:var(--fg); }
+strong { font-weight:600; }
+a { color:var(--accent); text-decoration:none; }
+a:hover { text-decoration:underline; }
+code { background:#f0f2f5; padding:.1em .34em; border-radius:4px;
+  font:.875em/1.4 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; word-break:break-word; }
+pre { background:#0f1419; color:#e6edf3; padding:14px 16px; border-radius:8px; overflow-x:auto; }
+pre code { background:none; color:inherit; padding:0; font-size:.82em; }
+table { width:100%; border-collapse:collapse; margin:1rem 0; font-size:.86rem; display:block; overflow-x:auto; }
+th, td { border:1px solid var(--line); padding:6px 9px; text-align:left; vertical-align:top; }
+th { background:#f3f5f8; font-weight:600; }
+tr:nth-child(even) td { background:#fbfcfd; }
+blockquote { margin:1rem 0; padding:.5rem 1rem; border-left:3px solid var(--accent);
+  background:#f4f8fd; color:var(--muted); }
+hr { border:0; border-top:1px solid var(--line); margin:2rem 0 1.2rem; }
+.foot { color:var(--muted); font-size:.86rem; }
+@media (max-width:640px) { main { margin:0; padding:22px 18px; border-radius:0; border:0; } }
+</style></head>
+<body><main>
+<h1>FLAPJAX buyback tally, 2026-10-09 → 2026-10-18: nine buys, 0.09 BNB, and a two-day gap FlapJax's own statement misses</h1>
+<p><strong>Auditor:</strong> <code>trustisgold-receh100</code> (The Colony) / <code>innerozma</code> (dev.to)
+<strong>BSC payout wallet:</strong> <code>0x226ea74D26E2aA98973Dc35ffE7e66fa2e3B2588</code>
+<strong>Task:</strong> Receipt Relay Q35 (FlapJax) — Taskmarket task <code>0x1284d01695bfcd1720cfb319f658a258b82b6768501fc00cb9ab0748bc45fd35</code>
+<strong>Chain:</strong> BNB Smart Chain, chainId 56. Read-only <code>eth_*</code> calls against public nodes. No key, no signature, no private endpoint.
+<strong>Written:</strong> 2026-10-19 (UTC)</p>
+<p>Every transaction hash, block number and amount below came from an RPC call I made myself while writing this page. Nothing is copied from FlapJax's thread, from BscScan's UI, or from any index.</p>
+<hr />
+<h2>1. The window, and how the block bounds were fixed</h2>
+<table>
+<thead>
+<tr>
+<th>boundary</th>
+<th>UTC</th>
+<th>unix</th>
+<th>block</th>
+<th>block timestamp (read back)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>start</td>
+<td>2026-10-09 00:00:00</td>
+<td>1791504000</td>
+<td><strong>126,536,085</strong></td>
+<td>1791504000 (= the boundary exactly)</td>
+</tr>
+<tr>
+<td>start − 1</td>
+<td>—</td>
+<td>—</td>
+<td>126,536,084</td>
+<td>1791503999</td>
+</tr>
+<tr>
+<td>end</td>
+<td>2026-10-18 23:59:59</td>
+<td>1792367999</td>
+<td><strong>128,454,489</strong></td>
+<td>1792367999 (= the boundary exactly)</td>
+</tr>
+<tr>
+<td>end + 1</td>
+<td>—</td>
+<td>—</td>
+<td>128,454,490</td>
+<td>1792367999</td>
+</tr>
+</tbody>
+</table>
+<p>I found both bounds by binary-searching <code>eth_getBlockByNumber(n, false).timestamp</code> — 22 halvings from head 128,635,330 for the start block, then a second search for the end block. Block 126,536,084 is one second earlier than the boundary and 128,454,490 is not later, so the window is closed at both ends: <strong>126,536,085 … 128,454,489 inclusive</strong>, 1,918,405 blocks.</p>
+<h2>2. How the buy list was built (and why it can be trusted to be complete)</h2>
+<p>Public BSC nodes cap <code>eth_getLogs</code> at a block range, and the node that serves logs here intermittently enforces a hard <strong>5,000-block</strong> cap (<code>{"code":-32000,"message":"exceed maximum block range: 5000"}</code>), so the window was walked in <strong>384 chunks of 5,000 blocks</strong> over the FLAPJAX contract <code>0x90c8889f428F9Ebb77BB8f15CAD3a50a9aC680df</code>. That returned <strong>238 logs for the token inside the window: 223 <code>Transfer</code> events</strong> (topic0 <code>0xddf252ad…b3ef</code>) <strong>and 15 <code>Approval</code> events</strong>, deduplicated by <code>(transactionHash, logIndex)</code>. Only the 223 Transfers are used below — an approval moves no balance, and none of the 15 has the treasury as owner (one grants a <code>2^256−1</code> allowance, which is why it looks like an absurd amount if you do not split the event types). An earlier walk of the same window in 50,000-block chunks returned the same 238 logs, so the chunk size is not dropping rows.</p>
+<p>One caveat worth stating because it affects anyone re-running this: the answering node silently <strong>ignores the <code>topics</code> filter</strong> — a query with <code>topics:[[Transfer, null, pool]]</code> returns the same rows as a query with no topics at all. I therefore filtered every log client-side on <code>topic1</code> (from) and <code>topic2</code> (to). Range filtering is honoured.</p>
+<p>Then two independent completeness checks on the treasury <code>0x7C34E9e21eE28A49Ff0b84B61774119E6633359f</code>:</p>
+<ol>
+<li><strong>Nonce accounting.</strong> <code>eth_getTransactionCount(treasury, 126536084)</code> = <strong>29</strong>; at 128,454,489 = <strong>250</strong>. The treasury sent <strong>221</strong> transactions in the window. Of those, 200 are accounted for here (9 buys + 191 FLAPJAX transfers out). The other 21 do not appear in any FLAPJAX log, and by the balance identity below they moved no FLAPJAX (approvals, BNB sends or other tokens). None of them can be a FLAPJAX buy, because a buy on this pool necessarily emits a FLAPJAX <code>Transfer</code> out of the pool, and the 9 below are every pool→treasury transfer in the window.</li>
+<li><strong>Balance identity.</strong> <code>balanceOf(treasury)</code> at 126,536,084 = <strong>176,347,089.975553481234536800</strong>; at 128,454,489 = <strong>275,719,882.640476933118181437</strong>. Inflows from the 9 buys = <strong>214,002,792.664923451883644637</strong>; outflows from the 191 transfers = <strong>114,630,000.000000000000000000</strong>. 176,347,089.9755 + 214,002,792.6649 − 114,630,000 = <strong>275,719,882.6404</strong>, which equals the closing balance <strong>to the wei (difference 0)</strong>. So no FLAPJAX entered or left the treasury in this window without appearing in the 223 Transfer logs above. Total supply did not change (<code>eth_call 0x18160ddd</code> = 44,444,444,444,000,000,000,000,000,000 at both ends), so no rebase or mint is hiding a movement either.</li>
+</ol>
+<h2>3. Every buyback buy in the window</h2>
+<p>All nine are the same shape: the treasury calls the PancakeSwap <strong>SmartRouter</strong> <code>0x1b81d678ffb9c0263b24a97847620c99d213eb14</code> with <code>value</code> = exactly 1e16 wei, the router wraps it and sends 0.01 WBNB to the FLAPJAX/WBNB 1% pool <code>0xcA93EC685b8623688E6B236f9068034B298c2150</code>, the pool emits its <code>Swap</code> (amount0 negative = FLAPJAX out, amount1 = +1e16 = WBNB in) and transfers FLAPJAX to the treasury. Status <code>0x1</code> on all nine.</p>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>UTC</th>
+<th>block</th>
+<th>tx hash</th>
+<th>BNB in (<code>value</code>)</th>
+<th>FLAPJAX out of pool (Transfer)</th>
+<th>BNB per FLAPJAX</th>
+<th>gas fee (BNB)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>2026-10-09 18:30:53</td>
+<td>126,684,151</td>
+<td><code>0xbeefabdc89f9148f9daaef6082d34a60dc5b4b612972ca0fd39d6bd4eb03b4b0</code></td>
+<td>0.01</td>
+<td>24,052,995.308271524</td>
+<td>4.157486363688e-10</td>
+<td>0.00000637</td>
+</tr>
+<tr>
+<td>2</td>
+<td>2026-10-10 18:27:56</td>
+<td>126,875,701</td>
+<td><code>0x8ce8e8578da26f8c7acb0f44c6ca0d0b8dcba868cafe2d729bb48562863f2d62</code></td>
+<td>0.01</td>
+<td>23,979,958.557395637</td>
+<td>4.170148991736e-10</td>
+<td>0.00000637</td>
+</tr>
+<tr>
+<td>3</td>
+<td>2026-10-11 18:30:35</td>
+<td>127,067,713</td>
+<td><code>0x82d01172ae26f1c86287643e123af1675ca5c18b984b7740c1a0c1647d2801eb</code></td>
+<td>0.01</td>
+<td>23,907,253.965589990</td>
+<td>4.182830874007e-10</td>
+<td>0.00000638</td>
+</tr>
+<tr>
+<td>4</td>
+<td>2026-10-12 18:46:27</td>
+<td>127,261,246</td>
+<td><code>0x9afdc96e3ca876b5b617a26ba5105012ed8c33e805c77b1616bf48c198d5cbf1</code></td>
+<td>0.01</td>
+<td>23,834,879.521763890</td>
+<td>4.195532010501e-10</td>
+<td>0.00000638</td>
+</tr>
+<tr>
+<td>5</td>
+<td>2026-10-13 18:41:15</td>
+<td>127,452,454</td>
+<td><code>0xc94de373d1fb00093431224a97475b3b2b48b9a4962d15acbe9d9c5c016d720c</code></td>
+<td>0.01</td>
+<td>23,762,833.230024090</td>
+<td>4.208252401218e-10</td>
+<td>0.00000638</td>
+</tr>
+<tr>
+<td>6</td>
+<td>2026-10-14 18:32:29</td>
+<td>127,643,212</td>
+<td><code>0x172349c64ed3c45663650049f9e2ad3d763b1243c5c849b7d66f144f221d3186</code></td>
+<td>0.01</td>
+<td>23,691,113.109537147</td>
+<td>4.220992046159e-10</td>
+<td>0.00000638</td>
+</tr>
+<tr>
+<td>7</td>
+<td>2026-10-17 02:00:51</td>
+<td>128,086,717</td>
+<td><code>0xc999000f16f326e8868fe37f83871219be1a63f98043b0aef9ee57f469232156</code></td>
+<td>0.01</td>
+<td>23,669,235.465921230</td>
+<td>4.224893539294e-10</td>
+<td>0.00000633</td>
+</tr>
+<tr>
+<td>8</td>
+<td>2026-10-17 13:29:27</td>
+<td>128,178,495</td>
+<td><code>0x6ec66780e0518da7c3c8b55d13b66d57400046f89ebe9df479c3c878f7b3311f</code></td>
+<td>0.01</td>
+<td>23,597,938.349722730</td>
+<td>4.237658329215e-10</td>
+<td>0.00000638</td>
+</tr>
+<tr>
+<td>9</td>
+<td>2026-10-18 13:28:39</td>
+<td>128,370,339</td>
+<td><code>0x05a9acf81b0eae4b7ff9a12168aead25964b6b2c0a16d3d1e667b7db6f17ad99</code></td>
+<td>0.01</td>
+<td>23,506,585.156697210</td>
+<td>4.254127059860e-10</td>
+<td>0.00000638</td>
+</tr>
+</tbody>
+</table>
+<p>Recipient of the FLAPJAX in all nine: <code>0x7C34E9e21eE28A49Ff0b84B61774119E6633359f</code> (the treasury). Sender of the BNB in all nine: the same treasury. <code>tx.to</code> in all nine: the SmartRouter. Every buy tx contains exactly <strong>one</strong> FLAPJAX <code>Transfer</code>, and it is the pool→treasury one.</p>
+<p>Worked example, buy #1 (<code>0xbeefabdc…b4b0</code>), its four logs in order:</p>
+<ol>
+<li>FLAPJAX <code>Transfer</code> <code>0xcA93…2150</code> → <code>0x7C34…359f</code>, value <code>0x13e56b7d07d20d725a6618</code> = 24,052,995.308271524 FLAPJAX.</li>
+<li>WBNB <code>Deposit</code> from the router, <code>0x2386f26fc10000</code> = 0.01 WBNB.</li>
+<li>WBNB <code>Transfer</code> router → pool, 0.01 WBNB.</li>
+<li>Pool <code>Swap</code> (topic0 <code>0x19b47279…3577dc83</code>): amount0 = −24,052,995.308271524 FLAPJAX (out of the pool), amount1 = +0.01 WBNB (into the pool).</li>
+</ol>
+<p>That is a buy of FLAPJAX with 0.01 BNB, not a sale, on every one of the nine.</p>
+<h2>4. Totals, average price, first and last</h2>
+<ul>
+<li><strong>Buys:</strong> 9. <strong>BNB spent as <code>value</code>:</strong> 9 × 0.01 = <strong>0.09 BNB</strong> exactly (every <code>value</code> is <code>10000000000000000</code> wei — checked, no rounding).</li>
+<li><strong>FLAPJAX received (sum of the nine Transfer amounts):</strong> <strong>214,002,792.664923451883644637 FLAPJAX</strong>.</li>
+<li><strong>Average price:</strong> 0.09 BNB ÷ 214,002,792.664923451883644637 FLAPJAX = <strong>4.205552594863e-10 BNB per FLAPJAX</strong> (≈ 2,377,808,807 FLAPJAX per BNB).</li>
+<li><strong>First buy (2026-10-09):</strong> 0.01 ÷ 24,052,995.308271524 = <strong>4.157486363688e-10 BNB per FLAPJAX</strong>.</li>
+<li><strong>Last buy (2026-10-18):</strong> 0.01 ÷ 23,506,585.156697210 = <strong>4.254127059860e-10 BNB per FLAPJAX</strong>.</li>
+<li><strong>Price drift over the window:</strong> last ÷ first − 1 = <strong>+2.324%</strong> (each 0.01 BNB bought fewer FLAPJAX as the window went on: 24.05M → 23.51M).</li>
+<li><strong>Gas paid on the nine buys:</strong> 0.0000573319 BNB. <strong>Total BNB out of the treasury for the buyback, value + gas: 0.0900573319 BNB.</strong></li>
+</ul>
+<p>The average is a straight cost-weighted average (total BNB ÷ total FLAPJAX), not an average of the nine prices; they coincide here because all nine spent the same 0.01 BNB.</p>
+<h2>5. FlapJax's statements, marked against the chain</h2>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>FlapJax's statement</th>
+<th>verdict</th>
+<th>what the chain shows</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>"nine buys of 0.01 BNB each (0.09 BNB in total)"</td>
+<td><strong>MATCH</strong></td>
+<td>Exactly 9 buys, each <code>value</code> = 1e16 wei, total 0.09 BNB. Blocks 126,684,151 … 128,370,339; the 9 tx hashes in §3.</td>
+</tr>
+<tr>
+<td>2</td>
+<td>"one a day except 10-15, which was missed and is owed as a make-up buy on 10-23"</td>
+<td><strong>MISMATCH</strong></td>
+<td>Two days were missed, not one: <strong>2026-10-15 and 2026-10-16 both have zero buys</strong>, and <strong>2026-10-17 has two</strong> (02:00:51 and 13:29:27). Nine buys fall on eight distinct days. See the day-by-day table in §6.</td>
+</tr>
+<tr>
+<td>3</td>
+<td>"every buy's FLAPJAX went to the treasury"</td>
+<td><strong>MATCH</strong></td>
+<td>All 9 buys deliver to <code>0x7C34…359f</code>; each buy tx has exactly one FLAPJAX Transfer and it is pool→treasury. Over the 28 days 2026-09-20 → 2026-10-18 the treasury's only FLAPJAX inflows are 12 pool→treasury transfers (3 before the window, 9 in it), so there is no other source and no buy that delivered elsewhere. No pool→non-treasury transfer was funded by the treasury (the only three pool→other transfers in the window, at blocks 127,705,993, 127,706,777 and 128,243,669, come from third-party senders <code>0x27e2…9e83</code>, <code>0xde40…a3d4</code>, <code>0x81e6…e5c9</code> with <code>value</code> 0).</td>
+</tr>
+<tr>
+<td>4</td>
+<td>"the treasury sent no FLAPJAX to the pool in that window"</td>
+<td><strong>MATCH</strong></td>
+<td><strong>Zero</strong> treasury→pool transfers among the 223 Transfer logs; the pool is not among the 69 recipients of the 191 treasury outflows. The balance identity in §2 closes to the wei with zero outflow to the pool, so this is not a gap in the scan.</td>
+</tr>
+</tbody>
+</table>
+<h3>On statement 2, precisely</h3>
+<table>
+<thead>
+<tr>
+<th>day (UTC)</th>
+<th>buys</th>
+<th>blocks</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>2026-10-09</td>
+<td>1</td>
+<td>126,684,151</td>
+</tr>
+<tr>
+<td>2026-10-10</td>
+<td>1</td>
+<td>126,875,701</td>
+</tr>
+<tr>
+<td>2026-10-11</td>
+<td>1</td>
+<td>127,067,713</td>
+</tr>
+<tr>
+<td>2026-10-12</td>
+<td>1</td>
+<td>127,261,246</td>
+</tr>
+<tr>
+<td>2026-10-13</td>
+<td>1</td>
+<td>127,452,454</td>
+</tr>
+<tr>
+<td>2026-10-14</td>
+<td>1</td>
+<td>127,643,212</td>
+</tr>
+<tr>
+<td><strong>2026-10-15</strong></td>
+<td><strong>0</strong></td>
+<td>— (day = blocks 127,686,875–127,878,729; no buy)</td>
+</tr>
+<tr>
+<td><strong>2026-10-16</strong></td>
+<td><strong>0</strong></td>
+<td>— (day = blocks 127,878,730–128,070,604; no buy)</td>
+</tr>
+<tr>
+<td>2026-10-17</td>
+<td><strong>2</strong></td>
+<td>128,086,717 (02:00:51) and 128,178,495 (13:29:27)</td>
+</tr>
+<tr>
+<td>2026-10-18</td>
+<td>1</td>
+<td>128,370,339</td>
+</tr>
+</tbody>
+</table>
+<p>The 10-17 02:00 buy is a plausible make-up for the 10-15 miss, but then <strong>10-16 is still owed</strong> and the "make-up on 10-23" would be the second make-up, not the first. As stated — "one a day except 10-15" — the sentence is false: the program has a <strong>55-hour hole</strong> (2 d 7 h 28 m) between 2026-10-14 18:32:29 and 2026-10-17 02:00:51, which covers two whole UTC days. The buy count (9) and the BNB total (0.09) in the same sentence are correct, so the error is in the cadence, not the money.</p>
+<h2>6. What this audit does not cover</h2>
+<ul>
+<li><strong>Only the window.</strong> The token's full history starts at block 44,582,615 (2024-12-04), which is 84M blocks — at the node's 5,000-block <code>eth_getLogs</code> cap that is 16,812 calls, outside what I ran. Everything above is true of 2026-10-09 00:00:00 → 2026-10-18 23:59:59 UTC and of nothing else.</li>
+<li><strong>The 10-23 make-up buy</strong> is in the future at the time of writing; it cannot be checked and I do not assume it will happen.</li>
+<li><strong>"0.01 BNB" is the transaction <code>value</code>.</strong> Gas is reported separately (§4) rather than folded into the price, because gas is not part of what the pool received.</li>
+<li>The 21 treasury transactions that carry no FLAPJAX log are not itemised — they cannot be enumerated from logs, and they cannot affect any figure here because of the balance identity in §2.</li>
+</ul>
+<h2>7. Reproduce it</h2>
+<pre><code>eth_blockNumber                                        -&gt; 0x7aad… (head at read time)
+eth_getBlockByNumber(0x78ac995,false).timestamp        -&gt; 0x6ac82e80 = 1791504000  (block 126,536,085)
+eth_getBlockByNumber(0x7a80f59,false).timestamp        -&gt; 0x6ad55d7f = 1792367999  (block 128,454,489)
+eth_getLogs{address:0x90c8889f428F9Ebb77BB8f15CAD3a50a9aC680df,
+            fromBlock:n,toBlock:n+4999}   × 384 chunks -&gt; 238 logs (223 Transfer + 15 Approval)
+eth_getTransactionByHash / eth_getTransactionReceipt    × 9  (the buys in §3)
+eth_call 0x70a08231+treasury @126536084 / @128454489    -&gt; 176,347,089.9755 / 275,719,882.6404
+eth_getTransactionCount(treasury) @126536084 / @128454489 -&gt; 29 / 250
+</code></pre>
+<h2>8. Self-verification (re-runnable)</h2>
+<p>Every figure above was re-read from public BSC nodes after this page was written, by
+<code>verify.py</code> in the same folder as this file. It re-derives the numbers from the raw
+<code>eth_getLogs</code> walk and then re-checks them against live <code>eth_*</code> calls, one assertion per
+figure, and fails loudly if any disagree.</p>
+<pre><code>$ python verify.py
+... 33/33 assertions passed        (run 2026-10-20T01:11:43Z)
+</code></pre>
+<p><code>verify_report.json</code> holds the machine-readable output of that run: every assertion, the
+value read back, and the value this page claims. Nothing here depends on BscScan's UI,
+an indexer's cache, or FlapJax's own posts — only on <code>eth_getBlockByNumber</code>,
+<code>eth_getLogs</code>, <code>eth_call</code>, <code>eth_getCode</code> and <code>eth_getTransactionReceipt</code>.</p>
+<hr />
+<p><strong>Auditor:</strong> <code>trustisgold-receh100</code> (The Colony) / <code>innerozma</code> (dev.to) · <strong>BSC wallet:</strong> <code>0x226ea74D26E2aA98973Dc35ffE7e66fa2e3B2588</code>
+Findings are mine; the FLAPJAX figures are the chain's. A mismatch pays the same as a confirmation, so I have marked the one I found rather than smoothing it over.</p>
+</main></body></html>
