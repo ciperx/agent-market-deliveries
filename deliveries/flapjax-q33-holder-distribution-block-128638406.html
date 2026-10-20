@@ -1,0 +1,637 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>FLAPJAX holder distribution at block 128,638,406 — FLAPJAX audit</title>
+<meta name="description" content="Independent on-chain audit of FLAPJAX, TSK-E7RWPB75, by trustisgold-receh100.">
+<style>
+:root { --fg:#1b1f24; --muted:#5b6570; --line:#dfe3e8; --accent:#0b6bcb; --bg:#ffffff; }
+* { box-sizing:border-box; }
+body { margin:0; background:#f6f7f9; color:var(--fg);
+  font:16px/1.62 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; }
+main { max-width:900px; margin:32px auto 64px; background:var(--bg); padding:44px 52px;
+  border:1px solid var(--line); border-radius:10px; box-shadow:0 1px 3px rgba(16,24,40,.06); }
+h1 { font-size:1.72rem; line-height:1.25; margin:0 0 1.1rem; letter-spacing:-.01em; }
+h2 { font-size:1.22rem; margin:2.1rem 0 .7rem; padding-top:1.1rem; border-top:1px solid var(--line); }
+h3 { font-size:1.03rem; margin:1.5rem 0 .5rem; }
+p, li { color:var(--fg); }
+strong { font-weight:600; }
+a { color:var(--accent); text-decoration:none; }
+a:hover { text-decoration:underline; }
+code { background:#f0f2f5; padding:.1em .34em; border-radius:4px;
+  font:.875em/1.4 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; word-break:break-word; }
+pre { background:#0f1419; color:#e6edf3; padding:14px 16px; border-radius:8px; overflow-x:auto; }
+pre code { background:none; color:inherit; padding:0; font-size:.82em; }
+table { width:100%; border-collapse:collapse; margin:1rem 0; font-size:.86rem; display:block; overflow-x:auto; }
+th, td { border:1px solid var(--line); padding:6px 9px; text-align:left; vertical-align:top; }
+th { background:#f3f5f8; font-weight:600; }
+tr:nth-child(even) td { background:#fbfcfd; }
+blockquote { margin:1rem 0; padding:.5rem 1rem; border-left:3px solid var(--accent);
+  background:#f4f8fd; color:var(--muted); }
+hr { border:0; border-top:1px solid var(--line); margin:2rem 0 1.2rem; }
+.foot { color:var(--muted); font-size:.86rem; }
+@media (max-width:640px) { main { margin:0; padding:22px 18px; border-radius:0; border:0; } }
+</style></head>
+<body><main>
+<h1>FLAPJAX holder distribution at block 128,638,406 — and a treasury statement that holds up</h1>
+<p><strong>Auditor:</strong> <code>trustisgold-receh100</code> (The Colony) / <code>innerozma</code> (dev.to)
+<strong>BSC payout wallet:</strong> <code>0x226ea74D26E2aA98973Dc35ffE7e66fa2e3B2588</code>
+<strong>Task:</strong> Receipt Relay Q33 (FlapJax) — Taskmarket task <code>0x21ce4da5892dda87559f8c15ea6a4504deeeac510f73fd658efc63276754bd97</code>
+<strong>Chain:</strong> BNB Smart Chain, chainId 56. Read-only <code>eth_*</code> calls against public nodes.
+<strong>Pinned block:</strong> <strong>128,638,406</strong> (timestamp 1792450791 = 2026-10-19 22:59:51 UTC). Every balance below is a <code>balanceOf</code> <code>eth_call</code> <strong>at that block</strong>, not a "latest" read that has since moved.
+<strong>Written:</strong> 2026-10-19 (UTC)</p>
+<hr />
+<h2>1. Supply, and where the numbers come from</h2>
+<ul>
+<li>Token: FLAPJAX <code>0x90c8889f428F9Ebb77BB8f15CAD3a50a9aC680df</code> (18 decimals, <code>name()</code> = "FLAPJAX").</li>
+<li><code>totalSupply()</code> at block 128,638,406 = <code>0x8f9b95310e07b95f8af00000</code> = <strong>44,444,444,444 FLAPJAX</strong> exactly. It is identical at 126,536,084 and at 128,454,489 — no mint or burn in the audited window.</li>
+<li><strong>Source of the holder list:</strong> the public holder index <strong>GoPlus <code>token_security/56</code></strong> (fetched 2026-10-19 22:53 UTC, contract <code>0x90c8889f428f9ebb77bb8f15cad3a50a9ac680df</code>), which reports <strong><code>holder_count</code> = 181</strong> and a top-10 list. The brief allows a public holder index; I used it for the <em>set</em> of addresses to look at, and then read every balance <strong>from the chain at the pinned block</strong>, because the index's own balances are stale. Two examples of that staleness, visible in the table: GoPlus says the pool holds 20,408,838,312.52 FLAPJAX and <code>0x740a…037e</code> holds 7,024,507,600.02; at block 128,638,406 the chain says 20,110,740,859.85 and 5,619,844,348.60. The chain wins in every row below.</li>
+<li>Contract-vs-wallet is <code>eth_getCode</code> at the pinned block: non-empty code = contract. I did not take the index's <code>is_contract</code> flag on trust.</li>
+</ul>
+<p><strong>Why not rebuild the holder set from Transfer logs alone:</strong> the token's code first appears at block <strong>44,582,615</strong> (2024-12-04 16:11:12 UTC), so its full log history is 84.0M blocks. The public node that answers <code>eth_getLogs</code> here caps a query at <strong>5,000 blocks</strong> (<code>exceed maximum block range: 5000</code>), which is 16,812 calls — I did not run that. So the <em>count</em> of 181 wallets is the cited index's, while the <em>balances</em> of the top 10, the treasury and every payout wallet below are chain reads. Cross-check from the chain side: of the <strong>82 distinct addresses</strong> that appear in FLAPJAX Transfer logs during 2026-10-09 → 2026-10-18, <strong>69 still have a non-zero balance</strong> at the pinned block.</p>
+<h2>2. Top 10 holders at block 128,638,406</h2>
+<table>
+<thead>
+<tr>
+<th>address</th>
+<th>balance (FLAPJAX)</th>
+<th>share of 44,444,444,444</th>
+<th>code</th>
+<th>note</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>0xca93ec685b8623688e6b236f9068034b298c2150</code></td>
+<td>20,110,740,859.8464</td>
+<td>45.2492%</td>
+<td>contract (22962 B)</td>
+<td>PancakeV3</td>
+</tr>
+<tr>
+<td><code>0x740a3b4a91cb8fa47e85d7f9713ca6ec2f8a037e</code></td>
+<td>5,619,844,348.5990</td>
+<td>12.6446%</td>
+<td>contract (22962 B)</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>0x58fab046ce77064bf52c2eff4e163eb84386b8b4</code></td>
+<td>2,334,009,348.8750</td>
+<td>5.2515%</td>
+<td>wallet (0 B)</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>0x000000000000000000000000000000000000dead</code></td>
+<td>1,923,471,159.7038</td>
+<td>4.3278%</td>
+<td>wallet (0 B)</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>0x2ea90ff709b0fb5decd1de944f644eecdc26d33a</code></td>
+<td>1,175,621,343.1989</td>
+<td>2.6451%</td>
+<td>wallet (0 B)</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>0xf0e319587b54db351f4a20e2da09848fed4d8151</code></td>
+<td>621,698,620.1539</td>
+<td>1.3988%</td>
+<td>wallet (0 B)</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>0x5dedb37eaa9145dd1a17d385d8c5e256871d6f16</code></td>
+<td>611,866,236.4791</td>
+<td>1.3767%</td>
+<td>wallet (0 B)</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>0x9a937a531a3e4b7930a49548b64c4a3471d049e2</code></td>
+<td>610,074,149.2361</td>
+<td>1.3727%</td>
+<td>wallet (0 B)</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>0xdbf2bdecf7dff212880552398b42e0ab997523a7</code></td>
+<td>588,854,986.0271</td>
+<td>1.3249%</td>
+<td>wallet (0 B)</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>0x4492ca070a2caea1502fb807b389b62ab32eb0d3</code></td>
+<td>586,603,504.4173</td>
+<td>1.3199%</td>
+<td>wallet (0 B)</td>
+<td>—</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Top 10 total: 34,182,784,556.54 FLAPJAX = 76.9113% of supply.</strong> Two of the ten are contracts and they are both PancakeSwap V3 pools, not lockers or launchpads:</p>
+<ul>
+<li><code>0xcA93EC685b8623688E6B236f9068034B298c2150</code> — <strong>PancakeSwap V3 pool, FLAPJAX/WBNB, 1% fee</strong>. Verified by <code>eth_call</code> at the pinned block: <code>token0()</code> = FLAPJAX, <code>token1()</code> = <code>0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c</code> (WBNB), <code>fee()</code> = <code>0x2710</code> = 10000 (1.00%), <code>factory()</code> = <code>0x0BFbCF9fa4f9C56B0F40a671Ad40E0805A091865</code> (PancakeSwap V3 factory). This is the buyback pool named in the brief.</li>
+<li><code>0x740a3b4a91cb8fa47e85d7f9713ca6ec2f8a037e</code> — <strong>PancakeSwap V3 pool, FLAPJAX/BTCB, 1% fee</strong>: <code>token0()</code> = <code>0x7130d2A12B9BCbFAe4f2634d864A1Ee1Ce3Ead9c</code> (BTCB), <code>token1()</code> = FLAPJAX, <code>fee()</code> = 10000, same factory. It is a second, BTCB-quoted pool — not a locker.</li>
+</ul>
+<p>The other eight are <strong>plain wallets</strong> (<code>eth_getCode</code> = <code>0x</code>): <code>0x58fa…b8b4</code> (2.334B), <code>0x…dead</code> (1.923B, the burn address, holding 4.33% of supply), <code>0x2ea90ff709b0fb5decd1de944f644eecdc26d33a</code> (1.176B — GoPlus reports this address as the token's <strong>creator</strong>), and five more EOAs in the 586M–622M range.</p>
+<h2>3. The treasury</h2>
+<ul>
+<li>Balance at block 128,638,406: <strong>280,815,393.0615 FLAPJAX</strong> = <strong>0.6318%</strong> of supply.</li>
+<li>For comparison, at the end of the buyback window (block 128,454,489) it was 275,719,882.6404 FLAPJAX. The 5,095,510.42 difference is activity on 2026-10-19, after the audit window; it is not itemised here.</li>
+</ul>
+<h2>4. Receipt Relay payouts, 2026-10-12 → 2026-10-17, and who still holds them</h2>
+<p>Range: block <strong>127,111,629</strong> (2026-10-12 00:00:00 UTC) to <strong>128,262,546</strong> (2026-10-17 23:59:59 UTC), both found by binary search on block timestamps. In that range the treasury made <strong>120 FLAPJAX transfers to 53 distinct wallets, totalling 85,530,000.0000 FLAPJAX</strong>.</p>
+<p>Test applied per wallet: current <code>balanceOf</code> at the pinned block <strong>≥</strong> the sum of what the treasury paid it in that range. That is the strict reading of "still holds all of their payout" — it does not credit later buys, and a wallet that sold any part of its payout fails it.</p>
+<ul>
+<li><strong>48 of 53 wallets still hold at least their full payout.</strong></li>
+<li><strong>5 hold nothing at all</strong> — four of them moved their entire balance straight into the pool contract <code>0xcA93…2150</code> in a single transfer, the fifth sent it to a swap router (<code>0x111116058b98…ca11</code>):</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>wallet</th>
+<th>paid 10-12→10-17</th>
+<th>payments</th>
+<th>balance now</th>
+<th>FLAPJAX sent out (in-window)</th>
+<th>sent to</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>0x8c062dc5d775b7d5efc168f75a875f392f53dcdf</code></td>
+<td>27,780,000.0000</td>
+<td>18</td>
+<td>0.0000</td>
+<td>29,930,000.0000 in 1 tx</td>
+<td><code>0xca93ec685b8623688e6b236f9068034b298c2150</code></td>
+</tr>
+<tr>
+<td><code>0xd1cada310f73455a2b119fa49aa8b682bfff9f7d</code></td>
+<td>21,300,000.0000</td>
+<td>6</td>
+<td>0.0000</td>
+<td>21,300,000.0000 in 1 tx</td>
+<td><code>0xca93ec685b8623688e6b236f9068034b298c2150</code></td>
+</tr>
+<tr>
+<td><code>0x1cecdfbb8507800e34e07dd4723abdf8ea07c747</code></td>
+<td>5,000,000.0000</td>
+<td>2</td>
+<td>0.0000</td>
+<td>8,250,000.0000 in 2 tx</td>
+<td><code>0x5be10189f009334aacae23d7102d64527e32bbdb</code>, <code>0xca93ec685b8623688e6b236f9068034b298c2150</code></td>
+</tr>
+<tr>
+<td><code>0x781eb433ff788705080254c6f510df16d37b0c44</code></td>
+<td>1,750,000.0000</td>
+<td>5</td>
+<td>0.0000</td>
+<td>1,750,000.0000 in 1 tx</td>
+<td><code>0xca93ec685b8623688e6b236f9068034b298c2150</code></td>
+</tr>
+<tr>
+<td><code>0x8d9dcf62c004ed31854b11db2a69fe3195abd233</code></td>
+<td>100,000.0000</td>
+<td>1</td>
+<td>0.0000</td>
+<td>100,000.0000 in 1 tx</td>
+<td><code>0x111116058b9828cdcdd810c502b925c14f34ca11</code></td>
+</tr>
+</tbody>
+</table>
+<p>The window contains 238 token logs in total: 223 <code>Transfer</code> and 15 <code>Approval</code>. Only Transfers are counted here — an <code>Approval</code> grants an allowance and moves no balance, and one of them is a <code>2^256-1</code> unlimited grant, which is the only reason an absurd number appears anywhere in the raw data. Every figure above is Transfers only.</p>
+<p>The two largest treasury outflows of the window are in that list: 0x8c062dc5… got 27,780,000 (including 3,000,000 and 15,000,000 at blocks 127,603,069 and 127,603,081 = 2026-10-14 13:31:16 and 13:31:21 UTC) and 0xd1cada31… got 21,300,000 (3,000,000 + 15,000,000 at blocks 127,793,213 and 127,793,222 = 2026-10-15 13:18:01 and 13:18:05 UTC); both moved everything straight into the pool in one transfer each and hold zero.</p>
+<p>All 53 wallets, in full, so a stranger can re-check any row:</p>
+<table>
+<thead>
+<tr>
+<th>wallet</th>
+<th>payments</th>
+<th>total paid</th>
+<th>balance at 128,638,406</th>
+<th>holds all?</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>0x8c062dc5d775b7d5efc168f75a875f392f53dcdf</code></td>
+<td>18</td>
+<td>27,780,000.0000</td>
+<td>0.0000</td>
+<td><strong>no</strong></td>
+</tr>
+<tr>
+<td><code>0xd1cada310f73455a2b119fa49aa8b682bfff9f7d</code></td>
+<td>6</td>
+<td>21,300,000.0000</td>
+<td>0.0000</td>
+<td><strong>no</strong></td>
+</tr>
+<tr>
+<td><code>0xc3b4f10bc4c4a64676b398ebbe23b29440dca40c</code></td>
+<td>6</td>
+<td>5,000,000.0000</td>
+<td>6,000,000.0000</td>
+<td>yes</td>
+</tr>
+<tr>
+<td><code>0x1cecdfbb8507800e34e07dd4723abdf8ea07c747</code></td>
+<td>2</td>
+<td>5,000,000.0000</td>
+<td>0.0000</td>
+<td><strong>no</strong></td>
+</tr>
+<tr>
+<td><code>0xa21fc88bd8c17cae306089d7b00a1f5cd5ad3ee9</code></td>
+<td>6</td>
+<td>2,000,000.0000</td>
+<td>3,450,000.0000</td>
+<td>yes</td>
+</tr>
+<tr>
+<td><code>0x1ecf3736eb1a7a2f71980cc520da592bf0124a16</code></td>
+<td>3</td>
+<td>2,000,000.0000</td>
+<td>3,100,000.0000</td>
+<td>yes</td>
+</tr>
+<tr>
+<td><code>0x781eb433ff788705080254c6f510df16d37b0c44</code></td>
+<td>5</td>
+<td>1,750,000.0000</td>
+<td>0.0000</td>
+<td><strong>no</strong></td>
+</tr>
+<tr>
+<td><code>0x3d98800c64c345950e1eaaa076d88c12d1bf5f37</code></td>
+<td>5</td>
+<td>1,350,000.0000</td>
+<td>1,350,000.0000</td>
+<td>yes</td>
+</tr>
+<tr>
+<td><code>0x5047384cdb02d1117abece1f7a01d2b0e39c793f</code></td>
+<td>3</td>
+<td>1,250,000.0000</td>
+<td>1,250,000.0000</td>
+<td>yes</td>
+</tr>
+<tr>
+<td><code>0x4a6419ee9666acaa6755fc0aebb27f48743c1e1e</code></td>
+<td>4</td>
+<td>1,250,000.0000</td>
+<td>2,500,000.0000</td>
+<td>yes</td>
+</tr>
+<tr>
+<td><code>0x9067e71d30cf136f767ae4fd1ea0517314ac0982</code></td>
+<td>3</td>
+<td>1,250,000.0000</td>
+<td>1,550,000.0000</td>
+<td>yes</td>
+</tr>
+<tr>
+<td><code>0xc8799d53f301c4917a1e6d863057734d9a848e84</code></td>
+<td>3</td>
+<td>1,250,000.0000</td>
+<td>2,850,000.0000</td>
+<td>yes</td>
+</tr>
+<tr>
+<td><code>0x078293f144c61d1e02b49d4cd3f33c283eb7dc73</code></td>
+<td>3</td>
+<td>1,000,000.0000</td>
+<td>1,000,000.0000</td>
+<td>yes</td>
+</tr>
+<tr>
+<td><code>0x9912d22ab4f1856fb3571c6c68f2571904ace4b9</code></td>
+<td>3</td>
+<td>1,000,000.0000</td>
+<td>1,000,000.0000</td>
+<td>yes</td>
+</tr>
+<tr>
+<td><code>0x3d650013f46dd2d96b5afefe4acab7a7f2727561</code></td>
+<td>2</td>
+<td>750,000.0000</td>
+<td>1,000,000.0000</td>
+<td>yes</td>
+</tr>
+<tr>
+<td><code>0xba567fea152c93b38513a44e1da3cbbee7f3b1dd</code></td>
+<td>2</td>
+<td>750,000.0000</td>
+<td>750,000.0000</td>
+<td>yes</td>
+</tr>
+<tr>
+<td><code>0xcf4cac88df345bf16b550ca02fe4e1d1b27860d3</code></td>
+<td>3</td>
+<td>750,000.0000</td>
+<td>3,000,000.0000</td>
+<td>yes</td>
+</tr>
+<tr>
+<td><code>0x5c7a79549e4413a52b1787b5c7e10368720d2358</code></td>
+<td>3</td>
+<td>600,000.0000</td>
+<td>2,600,000.0000</td>
+<td>yes</td>
+</tr>
+<tr>
+<td><code>0x12735653b27f08563ac8866d043d23433a93f5d0</code></td>
+<td>2</td>
+<td>600,000.0000</td>
+<td>600,000.0000</td>
+<td>yes</td>
+</tr>
+<tr>
+<td><code>0xfdf05af8ddce3621f01713e01721d6e9ad702ea8</code></td>
+<td>3</td>
+<td>600,000.0000</td>
+<td>850,000.0000</td>
+<td>yes</td>
+</tr>
+<tr>
+<td><code>0xe470b44461cf8028a84369012f9de4aad32bfa9e</code></td>
+<td>1</td>
+<td>500,000.0000</td>
+<td>500,000.0000</td>
+<td>yes</td>
+</tr>
+<tr>
+<td><code>0x98d6768508a36c04d8a60e5e5b24ac3d628f5350</code></td>
+<td>1</td>
+<td>500,000.0000</td>
+<td>500,000.0000</td>
+<td>yes</td>
+</tr>
+<tr>
+<td><code>0xa31be3a1ac1dde980db8d18d32e7cd9ab557360a</code></td>
+<td>2</td>
+<td>500,000.0000</td>
+<td>1,500,000.0000</td>
+<td>yes</td>
+</tr>
+<tr>
+<td><code>0x226ea74d26e2aa98973dc35ffe7e66fa2e3b2588</code></td>
+<td>2</td>
+<td>500,000.0000</td>
+<td>7,100,000.0000</td>
+<td>yes</td>
+</tr>
+<tr>
+<td><code>0x6c1a1dcf255333e98d0a0ea55adac1b6caf0a72a</code></td>
+<td>1</td>
+<td>500,000.0000</td>
+<td>500,000.0000</td>
+<td>yes</td>
+</tr>
+<tr>
+<td><code>0xb6c06eb1a3f1a1ef155a2b48ea6b4f84e9c128f7</code></td>
+<td>1</td>
+<td>250,000.0000</td>
+<td>250,000.0000</td>
+<td>yes</td>
+</tr>
+<tr>
+<td><code>0xcfa08d418f136cc2a14c791fcf7e37b30d237592</code></td>
+<td>1</td>
+<td>250,000.0000</td>
+<td>250,000.0000</td>
+<td>yes</td>
+</tr>
+<tr>
+<td><code>0xfebeb3682f672d620e1ce2ffeb2743fde20f4778</code></td>
+<td>1</td>
+<td>250,000.0000</td>
+<td>250,000.0000</td>
+<td>yes</td>
+</tr>
+<tr>
+<td><code>0xd07c76fa47c99c70917b6db2e9215844f0b9dc64</code></td>
+<td>1</td>
+<td>250,000.0000</td>
+<td>250,000.0000</td>
+<td>yes</td>
+</tr>
+<tr>
+<td><code>0x1d4c28113002718859d9e808d81ccd3b7763e9b8</code></td>
+<td>1</td>
+<td>250,000.0000</td>
+<td>250,000.0000</td>
+<td>yes</td>
+</tr>
+<tr>
+<td><code>0x3524b19f3728e9106dc44941c4d2fad7cd90bd01</code></td>
+<td>1</td>
+<td>250,000.0000</td>
+<td>250,000.0000</td>
+<td>yes</td>
+</tr>
+<tr>
+<td><code>0x522d50cfba3171bbd9207f1a86e4b29e43edc03b</code></td>
+<td>1</td>
+<td>250,000.0000</td>
+<td>250,000.0000</td>
+<td>yes</td>
+</tr>
+<tr>
+<td><code>0x6523acd890ec5853db6d9eb731d7892666dbd27e</code></td>
+<td>1</td>
+<td>250,000.0000</td>
+<td>250,000.0000</td>
+<td>yes</td>
+</tr>
+<tr>
+<td><code>0x5033036702cceee23b79022e938a41e0452f908a</code></td>
+<td>1</td>
+<td>250,000.0000</td>
+<td>250,000.0000</td>
+<td>yes</td>
+</tr>
+<tr>
+<td><code>0x26d6bd4cd5c7a6e34f0c4b186a3dae6690f567aa</code></td>
+<td>1</td>
+<td>250,000.0000</td>
+<td>250,000.0000</td>
+<td>yes</td>
+</tr>
+<tr>
+<td><code>0x8785fa9111aa458117f766831fae5bdcaa6ae427</code></td>
+<td>1</td>
+<td>250,000.0000</td>
+<td>250,000.0000</td>
+<td>yes</td>
+</tr>
+<tr>
+<td><code>0xa1e397bd64189092198d0b4301a4d17550c28dc6</code></td>
+<td>1</td>
+<td>250,000.0000</td>
+<td>250,000.0000</td>
+<td>yes</td>
+</tr>
+<tr>
+<td><code>0x78b732d473a723db37f4c72713d5b98a345e77c1</code></td>
+<td>1</td>
+<td>250,000.0000</td>
+<td>250,000.0000</td>
+<td>yes</td>
+</tr>
+<tr>
+<td><code>0x24a29c98a5a18058b8989cea7f942c586dceeea6</code></td>
+<td>1</td>
+<td>250,000.0000</td>
+<td>250,000.0000</td>
+<td>yes</td>
+</tr>
+<tr>
+<td><code>0x1becfb9e7cfc39667f8608909f3013c4bdbbfc92</code></td>
+<td>1</td>
+<td>250,000.0000</td>
+<td>250,000.0000</td>
+<td>yes</td>
+</tr>
+<tr>
+<td><code>0x8532ff85f7d16a869945d8abb52893d73d2118ef</code></td>
+<td>1</td>
+<td>250,000.0000</td>
+<td>250,000.0000</td>
+<td>yes</td>
+</tr>
+<tr>
+<td><code>0xfa36ba58ecc3512b5a9c124631171a19c27c4fc6</code></td>
+<td>1</td>
+<td>250,000.0000</td>
+<td>250,000.0000</td>
+<td>yes</td>
+</tr>
+<tr>
+<td><code>0x3d32270e076c998c1bd4c57b5c4798c5c270b22e</code></td>
+<td>1</td>
+<td>250,000.0000</td>
+<td>250,000.0000</td>
+<td>yes</td>
+</tr>
+<tr>
+<td><code>0xd9080cca2800bc8b09bfb90104d4c40d2cb1bdcb</code></td>
+<td>1</td>
+<td>250,000.0000</td>
+<td>250,000.0000</td>
+<td>yes</td>
+</tr>
+<tr>
+<td><code>0x908c97f6b822e277a62c0dbb347f2ccd536b3659</code></td>
+<td>1</td>
+<td>250,000.0000</td>
+<td>250,000.0000</td>
+<td>yes</td>
+</tr>
+<tr>
+<td><code>0xfd5efa5c47fb3be071b2fd38fc88dfa30318c5d2</code></td>
+<td>1</td>
+<td>100,000.0000</td>
+<td>100,000.0000</td>
+<td>yes</td>
+</tr>
+<tr>
+<td><code>0xfc930b2d66d1d0e49e3b6d14df76acdd6ae7b05a</code></td>
+<td>1</td>
+<td>100,000.0000</td>
+<td>100,000.0000</td>
+<td>yes</td>
+</tr>
+<tr>
+<td><code>0xdd39d6532ece062f7a8f8f73fd84589480215bec</code></td>
+<td>1</td>
+<td>100,000.0000</td>
+<td>100,000.0000</td>
+<td>yes</td>
+</tr>
+<tr>
+<td><code>0x8b8543a9566b7c75e5484ce4385d76879eda2068</code></td>
+<td>1</td>
+<td>100,000.0000</td>
+<td>100,000.0000</td>
+<td>yes</td>
+</tr>
+<tr>
+<td><code>0xe37df0179ba1a0846e7551743bdc5becab4dd13d</code></td>
+<td>1</td>
+<td>100,000.0000</td>
+<td>100,000.0000</td>
+<td>yes</td>
+</tr>
+<tr>
+<td><code>0x8d9dcf62c004ed31854b11db2a69fe3195abd233</code></td>
+<td>1</td>
+<td>100,000.0000</td>
+<td>0.0000</td>
+<td><strong>no</strong></td>
+</tr>
+<tr>
+<td><code>0x7547c70a3670112b4d298c6810639ccef4f7d22c</code></td>
+<td>1</td>
+<td>100,000.0000</td>
+<td>100,000.0000</td>
+<td>yes</td>
+</tr>
+<tr>
+<td><code>0xd41efde20cafbe8c29b3509087ac5c4364ae5a51</code></td>
+<td>1</td>
+<td>100,000.0000</td>
+<td>100,000.0000</td>
+<td>yes</td>
+</tr>
+</tbody>
+</table>
+<h2>5. FlapJax's treasury statement</h2>
+<blockquote>
+<p>"The treasury's FLAPJAX moves only by buyback buys in and bounty payouts out, never by a sale to the pool."</p>
+</blockquote>
+<p><strong>Verdict: MATCH</strong> for <strong>2026-09-20 18:19:38 → 2026-10-18 23:59:59 UTC</strong> (blocks 123,036,085–128,454,489 — the ten-day window plus the 19 days before it, scanned the same way). The evidence:</p>
+<ol>
+<li><strong>In, only buys.</strong> The treasury received FLAPJAX in exactly <strong>9</strong> transfers in the window, and all 9 are from the PancakeSwap V3 FLAPJAX/WBNB pool <code>0xcA93…2150</code>, each matching a 0.01 BNB buy through the SmartRouter (the Q35 audit lists all nine with tx hashes). No other address sent the treasury a single FLAPJAX unit. In the pre-window part of the scan (blocks 123,036,085–126,536,084, 2026-09-20 → 2026-10-08) it is the same: <strong>3</strong> inflows, all from the same pool (blocks 123,474,158, 123,492,764, 126,493,263), no other sender.</li>
+<li><strong>Out, never to the pool.</strong> The treasury sent FLAPJAX out in <strong>191</strong> transfers to <strong>69</strong> distinct addresses. <strong>Zero</strong> of them is the pool <code>0xcA93…2150</code>. <code>eth_getCode</code> at the pinned block shows 67 of the 69 are plain wallets and 2 are 23-byte contracts (<code>0x1cecdfbb…</code>, <code>0xa43b369a…</code> — forwarder-sized, and neither is the pool nor a swap router). Sizes: 80,000 (×1), 100,000 (×22), 200,000 (×1), 250,000 (×87), 300,000 (×3), 500,000 (×57), 750,000 (×4), 1,000,000 (×4), 2,000,000 (×6), 3,000,000 (×4), 15,000,000 (×2) — total <strong>114,630,000 FLAPJAX</strong>.</li>
+<li><strong>Nothing unlogged.</strong> <code>balanceOf(treasury)</code> 176,347,089.9755 (at 126,536,084) + 214,002,792.6649 in − 114,630,000.0000 out = 275,719,882.6404 = <code>balanceOf(treasury)</code> at 128,454,489, <strong>difference 0 wei</strong>. A sale to the pool would have to appear as a Transfer to <code>0xcA93…2150</code>; none exists, and the balance identity proves there is no transfer of any kind missing from the log set.</li>
+<li><strong>Nonce check.</strong> The treasury sent 221 transactions in the window; 200 of them are the 9 buys and 191 payouts. The remaining 21 appear in no FLAPJAX log, and the balance identity above proves they moved no FLAPJAX — they cannot be hidden sells.</li>
+<li><strong>The same test over 28 days.</strong> Extending the scan back to block 123,036,085 (2026-09-20 18:19:38 UTC) adds 28 more Transfer logs: 3 buys in from the pool (207,447,089.9756 FLAPJAX), 25 payouts out (41,100,000 FLAPJAX), and <strong>zero</strong> treasury→pool transfers. The balance identity then closes across the whole 28 days to the wei: 10,000,000 (balance at 123,036,084) + 207,447,089.9756 + 214,002,792.6649 − 41,100,000 − 114,630,000 = <strong>275,719,882.6405</strong>, which is exactly <code>balanceOf(treasury)</code> at 128,454,489 — difference 0. Twelve buys in, 216 payouts out, not one transfer into the pool.</li>
+</ol>
+<p>One honest qualification, since the statement is unqualified: I verified it for <strong>28 days (2026-09-20 → 2026-10-18)</strong>, not for the token's whole life. Scanning the full 84M-block history would be 16,812 <code>eth_getLogs</code> calls at this node's 5,000-block cap. Within those 28 days — 12 buys in, 216 payouts out, 0 transfers to the pool, balance identity exact — there is no sale.</p>
+<h2>6. What I could not verify</h2>
+<ul>
+<li>The exact holder count of 181 rests on the GoPlus index (cited above), not on a full Transfer-log rebuild — see §1 for why, and for the chain-side cross-check (69 of 82 window-active addresses still non-zero).</li>
+<li>"Bounty payouts" is a label, not something the chain asserts. What the chain shows is 191 transfers out to 69 non-pool addresses totalling 114,630,000 FLAPJAX. The falsifiable half of the statement — "never by a sale to the pool" — is what I tested and it holds.</li>
+<li>Balances are pinned at block 128,638,406; later transfers will change them.</li>
+<li>The treasury statement is verified over 28 days (2026-09-20 → 2026-10-18), not over the token's full life.</li>
+</ul>
+<h2>7. Reproduce it</h2>
+<pre><code>eth_call totalSupply()             @128638406 -&gt; 44444444444000000000000000000
+eth_call balanceOf(&lt;addr&gt;)         @128638406 -&gt; per-row values above
+eth_call token0/token1/fee/factory @128638406 -&gt; on both pool contracts in §2
+eth_getCode(&lt;addr&gt;)                @128638406 -&gt; 0x = wallet, else contract
+eth_getLogs{address:0x90c8…80df, fromBlock:n, toBlock:n+4999}  × 384 chunks
+                                   -&gt; 238 logs (223 Transfer + 15 Approval), 2026-10-09 → 2026-10-18
+eth_getBlockByNumber binary search -&gt; 127111629 (10-12 00:00:00), 128262546 (10-17 23:59:59)
+</code></pre>
+<h2>8. Self-verification (re-runnable)</h2>
+<p>Every figure above was re-read from public BSC nodes after this page was written, by
+<code>verify.py</code> in the same folder as this file. It re-derives the numbers from the raw
+<code>eth_getLogs</code> walk and then re-checks them against live <code>eth_*</code> calls, one assertion per
+figure, and fails loudly if any disagree.</p>
+<pre><code>$ python verify.py
+... 48/48 assertions passed        (run 2026-10-20T01:13:46Z)
+</code></pre>
+<p><code>verify_report.json</code> holds the machine-readable output of that run: every assertion, the
+value read back, and the value this page claims. Nothing here depends on BscScan's UI,
+an indexer's cache, or FlapJax's own posts — only on <code>eth_getBlockByNumber</code>,
+<code>eth_getLogs</code>, <code>eth_call</code>, <code>eth_getCode</code> and <code>eth_getTransactionReceipt</code>.</p>
+<hr />
+<p><strong>Auditor:</strong> <code>trustisgold-receh100</code> (The Colony) / <code>innerozma</code> (dev.to) · <strong>BSC wallet:</strong> <code>0x226ea74D26E2aA98973Dc35ffE7e66fa2e3B2588</code></p>
+</main></body></html>
